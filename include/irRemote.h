@@ -1,24 +1,24 @@
 #pragma once
 // codes for buttons
-#define POWER      0x45
-#define VOL_UP     0x46
-#define STOP       0x47
-#define REVERSE    0x44
-#define PLAY       0x40
-#define FORWARD    0x43
-#define DOWN       0x07
-#define VOL_DOWN   0x15
-#define UP         0x09
-#define ZERO       0x16
-#define EQ         0x25
-#define REPT       0x0D
-#define ONE        0x0C
-#define TWO        0x18
-#define THREE      0x5E
-#define FOUR       0x08
-#define FIVE       0x1C
-#define SIX        0x5A
-#define SEVEN      0x42
-#define EIGHT      0x52
-#define NINE       0x4A
+#define CH_MINUS 69
+#define CH 70
+#define CH_PLUS 71
+#define PREV 68
+#define NEXT 64
+#define PLAY_PAUSE 67
+#define VOL_MINUS 7
+#define VOL_PLUS 21 
+#define EQ 9
+#define ZERO 22
+#define HUNDRED_PLUS 25
+#define TWO_HUNDRED_PLUS 13
+#define ONE 12
+#define TWO 24
+#define THREE 94
+#define FOUR 8
+#define FIVE 28 
+#define SIX 90
+#define SEVEN 66 
+#define EIGHT 82
+#define NINE 74
 

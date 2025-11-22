@@ -3,41 +3,18 @@
 #include "sonic.h"
 #include <IRremote.hpp>
 #include "PinDefinitionsAndMore.h"
-
-
-
-
-#define CH_MINUS 69
-#define CH 70
-#define CH_PLUS 71
-#define PREV 68
-#define NEXT 64
-#define PLAY_PAUSE 67
-#define VOL_MINUS 7
-#define VOL_PLUS 21 
-#define EQ 9
-#define ZERO 22
-#define HUNDRED_PLUS 25
-#define TWO_HUNDRED_PLUS 13
-#define ONE 12
-#define TWO 24
-#define THREE 94
-#define FOUR 8
-#define FIVE 28 
-#define SIX 90
-#define SEVEN 66 
-#define EIGHT 82
-#define NINE 74
+#include <Servo.h>
+#include "irRemote.h"
 
 #define IR_RECEIVE_PIN 2
 
-#define EN_A 5
-#define EN_B 6
+#define EN_A 6
+#define EN_B 5
 
 #define IN_1 12
-#define IN_2 A0
-#define IN_3 8
-#define IN_4 7
+#define IN_2 11
+#define IN_3 9
+#define IN_4 8
 
 #define TRIGGER_1 A0
 #define ECHO_1 A1
@@ -46,13 +23,28 @@
 #define TRIGGER_3 A4
 #define ECHO_3 A5
 
-// Motor motor_left(IN_2, IN_1, EN_A, AUTO);
-// Motor motor_right(IN_4, IN_3, EN_B, AUTO);
+#define SERVO_LEFT_PIN
+#define SERVO_RIGHT_PIN
+#define SERVO_FRONT_PIN
+
+#define RED_LED_PIN 3
+#define GREEN_LED_PIN 4
+
+#define MAX_SPEED_FORWARD 255
+#define MAX_SPEED_BACKWARD -255
+
+Motor motor_left(IN_2, IN_1, EN_A, AUTO);
+Motor motor_right(IN_4, IN_3, EN_B, AUTO);
 
 Sonic sonic_1(ECHO_1, TRIGGER_1);
 Sonic sonic_2(ECHO_2, TRIGGER_2);
 Sonic sonic_3(ECHO_3, TRIGGER_3);
 
+Servo servo_left(SERVO_LEFT_PIN);
+Servo servo_front(SERVO_RIGHT_PIN);
+Servo servo_right(SERVO_FRONT_PIN);
+
+void manual_mode();
 
 int y = 255;
 int x;
@@ -66,18 +58,13 @@ void setup()
 {
   Serial.begin(115200);
   IrReceiver.begin(IR_RECEIVE_PIN, 1);
+
+  motor_left.setMode(AUTO);
+  motor_right.setMode(AUTO);
 }
 
 void loop()
 {
-
-  if (IrReceiver.decode())
-  {
-    Serial.println(IrReceiver.decodedIRData.command);
-
-    delay(50);
-    IrReceiver.resume();
-  }
 
   static unsigned long last_control_ms = 0;
   static unsigned long last_plot_ms = 0;
@@ -106,5 +93,37 @@ void loop()
     Serial.print(sonic_3.get_distance());
     Serial.print(")}");
     last_plot_ms = millis();
+  }
+}
+
+void manual_mode()
+{
+  if (IrReceiver.decode())
+  {
+    switch (IrReceiver.decodedIRData.command)
+    {
+    case CH: // Forward
+      motor_right.setSpeed(MAX_SPEED_FORWARD);
+      motor_left.setSpeed(MAX_SPEED_FORWARD);
+      break;
+
+    case VOL_PLUS: // Backwards
+      motor_right.setSpeed(MAX_SPEED_BACKWARD);
+      motor_left.setSpeed(MAX_SPEED_BACKWARD);
+      break;
+
+    case PREV: // Left 
+      motor_right.setSpeed(MAX_SPEED_FORWARD);
+      motor_left.setSpeed(MAX_SPEED_BACKWARD);
+      break;
+
+    case PLAY_PAUSE: // Right
+      motor_right.setSpeed(MAX_SPEED_BACKWARD);
+      motor_left.setSpeed(MAX_SPEED_FORWARD);
+      break;
+    }
+
+    delay(50);
+    IrReceiver.resume();
   }
 }

@@ -1,0 +1,9 @@
+Motor driver video:
+https://www.youtube.com/watch?v=tJYDV3FFCWQ
+
+
+Servo documentation:
+https://docs.arduino.cc/libraries/servo/
+
+IR Remote library:
+https://github.com/Arduino-IRremote/Arduino-IRremote/blob/master/examples/ControlRelay/PinDefinitionsAndMore.h

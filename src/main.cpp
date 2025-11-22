@@ -36,12 +36,12 @@
 #define AUTO_MODE 1
 
 #define SERVO_FRONT_RIGHT_ANGLE 85
-#define SERVO_FRONT_FORWARD_ANGLE 60
+#define SERVO_FRONT_FORWARD_ANGLE 70
 #define SERVO_FRONT_LEFT_ANGLE 40
 
-#define SERVO_BACK_RIGHT_ANGLE 85
-#define SERVO_BACK_FORWARD_ANGLE 60
-#define SERVO_BACK_LEFT_ANGLE 40
+#define SERVO_BACK_RIGHT_ANGLE 160
+#define SERVO_BACK_FORWARD_ANGLE 140
+#define SERVO_BACK_LEFT_ANGLE 120
 
 #define SONIC_THRESHOLD 15 // cm
 
@@ -56,7 +56,7 @@ Servo servo_front;
 Servo servo_back;
 
 int servo_front_pos = SERVO_FRONT_FORWARD_ANGLE;
-int servo_back_pos = 0;
+int servo_back_pos = SERVO_BACK_FORWARD_ANGLE;
 
 void manual_mode(uint8_t ir_command);
 void auto_mode(uint8_t ir_command);
@@ -125,11 +125,12 @@ void loop()
   }
 
   servo_front.write(servo_front_pos);
+  servo_back.write(servo_back_pos);
   // Serial.println(servo_front_pos);
 
   float distance_1 = sonic_1.get_distance();
-  float distance_2 = sonic_1.get_distance();
-  float distance_3 = sonic_1.get_distance();
+  float distance_2 = sonic_2.get_distance();
+  float distance_3 = sonic_3.get_distance();
 
   if (distance_1 < SONIC_THRESHOLD || distance_2 < SONIC_THRESHOLD || distance_3 < SONIC_THRESHOLD)
   {

@@ -13,8 +13,8 @@
 
 #define IN_1 12
 #define IN_2 11
-#define IN_3 9
-#define IN_4 8
+#define IN_3 10
+#define IN_4 9
 
 #define TRIGGER_1 A0
 #define ECHO_1 A1
@@ -30,11 +30,11 @@
 #define RED_LED_PIN 3
 #define GREEN_LED_PIN 4
 
-#define MAX_SPEED_FORWARD 255
-#define MAX_SPEED_BACKWARD -255
+#define MAX_SPEED_FORWARD 150
+#define MAX_SPEED_BACKWARD -150
 
-Motor motor_left(IN_2, IN_1, EN_A, AUTO);
-Motor motor_right(IN_4, IN_3, EN_B, AUTO);
+Motor motor_left(IN_1, IN_2, EN_A, AUTO);
+Motor motor_right(IN_3, IN_4, EN_B, AUTO);
 
 Sonic sonic_1(ECHO_1, TRIGGER_1);
 Sonic sonic_2(ECHO_2, TRIGGER_2);
@@ -66,6 +66,11 @@ void setup()
 void loop()
 {
 
+  manual_mode();
+
+  // motor_left.setSpeed(MAX_SPEED_FORWARD);
+  // motor_right.setSpeed(MAX_SPEED_FORWARD);
+
   static unsigned long last_control_ms = 0;
   static unsigned long last_plot_ms = 0;
   // if (millis() - last_control_ms >= CONTROL_PERIOD_MS)
@@ -83,17 +88,17 @@ void loop()
   // }
 
   // static unsigned long last_plot_ms = 0;
-  if (millis() - last_plot_ms >= PLOT_PERIOD_MS)
-  {
-    Serial.print("{p(d1:");
-    Serial.print(sonic_1.get_distance());
-    Serial.print(",d2:");
-    Serial.print(sonic_2.get_distance());
-    Serial.print(",d3:");
-    Serial.print(sonic_3.get_distance());
-    Serial.print(")}");
-    last_plot_ms = millis();
-  }
+  // if (millis() - last_plot_ms >= PLOT_PERIOD_MS)
+  // {
+  //   Serial.print("{p(d1:");
+  //   Serial.print(sonic_1.get_distance());
+  //   Serial.print(",d2:");
+  //   Serial.print(sonic_2.get_distance());
+  //   Serial.print(",d3:");
+  //   Serial.print(sonic_3.get_distance());
+  //   Serial.print(")}");
+  //   last_plot_ms = millis();
+  // }
 }
 
 void manual_mode()
@@ -103,23 +108,33 @@ void manual_mode()
     switch (IrReceiver.decodedIRData.command)
     {
     case CH: // Forward
+      Serial.println("forward");
       motor_right.setSpeed(MAX_SPEED_FORWARD);
       motor_left.setSpeed(MAX_SPEED_FORWARD);
       break;
 
     case VOL_PLUS: // Backwards
+      Serial.println("back");
       motor_right.setSpeed(MAX_SPEED_BACKWARD);
       motor_left.setSpeed(MAX_SPEED_BACKWARD);
       break;
 
-    case PREV: // Left 
+    case PREV: // Left
+      Serial.println("left");
       motor_right.setSpeed(MAX_SPEED_FORWARD);
       motor_left.setSpeed(MAX_SPEED_BACKWARD);
       break;
 
     case PLAY_PAUSE: // Right
+      Serial.println("right");
       motor_right.setSpeed(MAX_SPEED_BACKWARD);
       motor_left.setSpeed(MAX_SPEED_FORWARD);
+      break;
+
+    case NEXT: // stop
+      Serial.println("stop");
+      motor_right.setSpeed(0);
+      motor_left.setSpeed(0);
       break;
     }
 

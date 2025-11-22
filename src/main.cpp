@@ -23,15 +23,27 @@
 #define TRIGGER_3 A4
 #define ECHO_3 A5
 
-#define SERVO_LEFT_PIN
-#define SERVO_RIGHT_PIN
-#define SERVO_FRONT_PIN
+#define SERVO_BACK_PIN 7
+#define SERVO_FRONT_PIN 8
 
 #define RED_LED_PIN 3
 #define GREEN_LED_PIN 4
 
 #define MAX_SPEED_FORWARD 150
 #define MAX_SPEED_BACKWARD -150
+
+#define MANUAL_MODE 0
+#define AUTO_MODE 1
+
+#define SERVO_FRONT_RIGHT_ANGLE 85
+#define SERVO_FRONT_FORWARD_ANGLE 60
+#define SERVO_FRONT_LEFT_ANGLE 40
+
+#define SERVO_BACK_RIGHT_ANGLE 85
+#define SERVO_BACK_FORWARD_ANGLE 60
+#define SERVO_BACK_LEFT_ANGLE 40
+
+#define SONIC_THRESHOLD 15 // cm
 
 Motor motor_left(IN_1, IN_2, EN_A, AUTO);
 Motor motor_right(IN_3, IN_4, EN_B, AUTO);
@@ -40,11 +52,14 @@ Sonic sonic_1(ECHO_1, TRIGGER_1);
 Sonic sonic_2(ECHO_2, TRIGGER_2);
 Sonic sonic_3(ECHO_3, TRIGGER_3);
 
-Servo servo_left(SERVO_LEFT_PIN);
-Servo servo_front(SERVO_RIGHT_PIN);
-Servo servo_right(SERVO_FRONT_PIN);
+Servo servo_front;
+Servo servo_back;
 
-void manual_mode();
+int servo_front_pos = SERVO_FRONT_FORWARD_ANGLE;
+int servo_back_pos = 0;
+
+void manual_mode(uint8_t ir_command);
+void auto_mode(uint8_t ir_command);
 
 int y = 255;
 int x;
@@ -61,31 +76,72 @@ void setup()
 
   motor_left.setMode(AUTO);
   motor_right.setMode(AUTO);
+
+  motor_left.setDirection(1);
+  motor_right.setDirection(1);
+
+  servo_back.attach(SERVO_BACK_PIN);
+  servo_front.attach(SERVO_FRONT_PIN);
+
+  pinMode(RED_LED_PIN, OUTPUT);
+  pinMode(GREEN_LED_PIN, OUTPUT);
+
 }
+
+uint8_t mode = MANUAL_MODE;
+
+uint8_t is_obstacle = false;
 
 void loop()
 {
 
-  manual_mode();
+  if (IrReceiver.decode())
+  {
+    switch (IrReceiver.decodedIRData.command)
+    {
+    case ONE:
+      mode = MANUAL_MODE;
+      break;
 
-  // motor_left.setSpeed(MAX_SPEED_FORWARD);
-  // motor_right.setSpeed(MAX_SPEED_FORWARD);
+    case TWO:
+      mode = AUTO_MODE;
+      break;
 
-  static unsigned long last_control_ms = 0;
-  static unsigned long last_plot_ms = 0;
-  // if (millis() - last_control_ms >= CONTROL_PERIOD_MS)
-  // {
-  //   distance = sonic.get_distance();
-  //   const int x = map(distance, MIN_SONIC_DISTANCE, MAX_SONIC_DISTANCE, -255, 255);
+    default:
+    {
+      switch (mode)
+      {
+      case MANUAL_MODE:
+        manual_mode(IrReceiver.decodedIRData.command);
+        break;
 
-  //   int left = y + x;
-  //   int right = y - x;
+      case AUTO_MODE:
+        auto_mode(IrReceiver.decodedIRData.command);
 
-  //   // motor_left.setSpeed(left);
-  //   // motor_right.setSpeed(right);
+        break;
+      }
+    }
+    }
+  }
 
-  //   last_control_ms = millis();
-  // }
+  servo_front.write(servo_front_pos);
+  // Serial.println(servo_front_pos);
+
+  float distance_1 = sonic_1.get_distance();
+  float distance_2 = sonic_1.get_distance();
+  float distance_3 = sonic_1.get_distance();
+
+  if (distance_1 < SONIC_THRESHOLD || distance_2 < SONIC_THRESHOLD || distance_3 < SONIC_THRESHOLD)
+  {
+    is_obstacle = true;
+  }
+  else
+  {
+    is_obstacle = false;
+  }
+
+  digitalWrite(RED_LED_PIN, is_obstacle);
+
 
   // static unsigned long last_plot_ms = 0;
   // if (millis() - last_plot_ms >= PLOT_PERIOD_MS)
@@ -101,44 +157,55 @@ void loop()
   // }
 }
 
-void manual_mode()
+void manual_mode(uint8_t ir_command)
 {
-  if (IrReceiver.decode())
+
+  switch (ir_command)
   {
-    switch (IrReceiver.decodedIRData.command)
-    {
-    case CH: // Forward
-      Serial.println("forward");
-      motor_right.setSpeed(MAX_SPEED_FORWARD);
-      motor_left.setSpeed(MAX_SPEED_FORWARD);
-      break;
+  case CH: // Forward
+    Serial.println("forward");
+    motor_right.setSpeed(MAX_SPEED_FORWARD);
+    motor_left.setSpeed(MAX_SPEED_FORWARD);
+    digitalWrite(GREEN_LED_PIN, 1);
+    break;
 
-    case VOL_PLUS: // Backwards
-      Serial.println("back");
-      motor_right.setSpeed(MAX_SPEED_BACKWARD);
-      motor_left.setSpeed(MAX_SPEED_BACKWARD);
-      break;
+  case VOL_PLUS: // Backwards
+    Serial.println("back");
+    motor_right.setSpeed(MAX_SPEED_BACKWARD);
+    motor_left.setSpeed(MAX_SPEED_BACKWARD);
+    digitalWrite(GREEN_LED_PIN, 1);
+    break;
 
-    case PREV: // Left
-      Serial.println("left");
-      motor_right.setSpeed(MAX_SPEED_FORWARD);
-      motor_left.setSpeed(MAX_SPEED_BACKWARD);
-      break;
+  case PREV: // Left
+    Serial.println("left");
+    servo_front_pos = SERVO_FRONT_LEFT_ANGLE;
+    servo_back_pos = SERVO_BACK_RIGHT_ANGLE;
+    break;
 
-    case PLAY_PAUSE: // Right
-      Serial.println("right");
-      motor_right.setSpeed(MAX_SPEED_BACKWARD);
-      motor_left.setSpeed(MAX_SPEED_FORWARD);
-      break;
+  case PLAY_PAUSE: // Right
+    Serial.println("right");
+    servo_front_pos = SERVO_FRONT_RIGHT_ANGLE;
+    servo_back_pos = SERVO_BACK_LEFT_ANGLE;
+    break;
 
-    case NEXT: // stop
-      Serial.println("stop");
-      motor_right.setSpeed(0);
-      motor_left.setSpeed(0);
-      break;
-    }
+  case HUNDRED_PLUS: // Left
+    Serial.println("straight");
+    servo_front_pos = SERVO_FRONT_FORWARD_ANGLE;
+    servo_back_pos = SERVO_BACK_FORWARD_ANGLE;
+    break;
 
-    delay(50);
-    IrReceiver.resume();
+  case NEXT: // stop
+    Serial.println("stop");
+    motor_right.setSpeed(0);
+    motor_left.setSpeed(0);
+    digitalWrite(GREEN_LED_PIN, 0);
+    break;
   }
+
+  delay(50);
+  IrReceiver.resume();
+}
+
+void auto_mode(uint8_t ir_command)
+{
 }
